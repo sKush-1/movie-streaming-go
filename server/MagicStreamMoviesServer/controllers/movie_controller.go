@@ -14,6 +14,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/sKush-1/magic_stream_movies_server/database"
 	"github.com/sKush-1/magic_stream_movies_server/models"
+	"github.com/tmc/langchaingo/llms/openai"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
@@ -106,7 +107,7 @@ func GetReviewRankings(admin_review string) (models.Ranking, error) {
 	rankings, err := GetRankings()
 
 	if err != nil {
-		return "", 0, err
+		return models.Ranking{}, err
 	}
 
 	sentimentDelimited := ""
@@ -128,26 +129,28 @@ func GetReviewRankings(admin_review string) (models.Ranking, error) {
 	OpenAIAPIKey := os.Getenv("OPENAI_API_KEY")
 
 	if OpenAIAPIKey == "" {
-		return "", 0, errors.New("OPENAI_API_KEY is not set in environment variables")
+		return models.Ranking{}, errors.New("OPENAI_API_KEY is not set in environment variables")
 	}
 
-	llm, err := openai.New(openai.WithToken(OpenAIAPIKey))
+	_, err = openai.New(openai.WithToken(OpenAIAPIKey))
 
 	if err != nil {
-		return "", 0, err
+		return models.Ranking{}, err
 	}
 
-	base_prompt_template := os.Getenv("BASE_PROMPT_TEMPLATE")
+	_ = os.Getenv("BASE_PROMPT_TEMPLATE")
 
-
-	return sentimentDelimited, 1, nil
+	// TODO: Implement the actual logic to determine ranking based on admin_review
+	// For now, return a default ranking
+	return models.Ranking{
+		RankingValue: 1,
+		RankingName:  sentimentDelimited,
+	}, nil
 }
 
 
 
 
-
-}
 
 func AdminReviewUpdate() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -162,7 +165,7 @@ func AdminReviewUpdate() gin.HandlerFunc {
 			AdminReview string `json:"admin_review"`
 		}
 
-		var resp struct {
+		var _ struct {
 			RankingName string `json:"ranking_name"`
 			AdminReview string `json:"admin_review"`
 		}
